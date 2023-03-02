@@ -4,50 +4,48 @@ rm -rf student-submission
 # 1. Cloning the repository of the student submission
 git clone $1 student-submission
 echo 'Finished cloning'
-# cd student-submission
 
 # 2. Checking if the student code has the correct  file
 set -e
 # files= `find student-submission -name "*.java"`
-for file in student-submission
-do
-    if [ -f $file ] &&  [$file == *ListExamples.java* ];
-    then
-        echo 'Correct file found in submission: "ListExamples.java"'
-        found = true
-        # exit 0
-    else
-        continue
-    fi
-done
-if [[ $found == false ]];
+cd student-submission
+
+if [[ -e 'ListExamples.java' ]]
 then
+    echo 'Correct file found in submission: "ListExamples.java"'
+else
     echo 'File not found in submission: "ListExamples.java"'
-    exit 1
+    exit
 fi
 
-# 3. Getting student code and tester file into the same directory
+# 3. Copying the student code to the working directory with the tester file and lib
+cp ListExamples.java ..
 
-cp TestListExamples.java code-and-tests
-
-cd student-submission
-cp ListExamples.java code-and-tests
+cd .. # Returning to code-and-tests directory in order to run JUnit
 
 # 4. Compiling the tests and student code
 set +e # Turning off set-e because we want to continue even if compilation fails
 
-# Copying the JUnit library into the directory because it wasn't working otherwise
-cp -r lib code-and-tests 
-
-cd code-and-tests
-
 # Compiling and redirecting standard errors to compile-errors.txt
 javac -cp $CPATH *.java 2> compile-errors.txt
+if [ $? -eq 0 ]; then
+    echo "Compilation successful"
+else
+    echo "Compilation failed"
+    exit 1
+fi
 cat compile-errors.txt # Printing the errors (if any)
 
 # 5. Running the tester file
 java -cp $CPATH org.junit.runner.JUnitCore TestListExamples > out.txt 2>&1
+if [ $? -eq 0 ]; then
+    echo "Tests passed"
+else
+    echo "Tests failed. Statistics below."
+    echo `grep "Tests run:" out.txt`
+fi
 cat out.txt # Printing results of the running the tester
+
 
 
 
